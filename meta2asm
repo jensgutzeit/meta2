@@ -1,0 +1,192 @@
+#!/usr/bin/env ruby
+
+require 'optparse'
+require 'ostruct'
+
+VERSION = [0, 0, 1]
+
+class AssemblerOptions
+   
+   def self.parse(args)
+      options = OpenStruct.new
+      options.verbose = false
+      options.force = false
+
+      opt_parser = OptionParser.new do |opts|
+         opts.banner = 'Usage: meta2asm [options] file1 file2 ...'
+         opts.separator ''
+         opts.separator 'Specific options:'
+
+         opts.on'-v', '--[no-]verbose', 'Run verbosely' do |v|
+            options.verbose = v
+         end
+
+         opts.on '-f', '--[no-]force', 'Overwrite existing files' do |f|
+            options.force = f
+         end
+
+         opts.on_tail '-h', '--help', 'Show this message' do
+            puts opts
+            exit
+         end
+
+         opts.on_tail '--version', 'Show program version' do
+            puts "meta2asm #{VERSION.join('.')}"
+            exit
+         end
+
+      end
+
+      opt_parser.parse! args
+      options
+   end
+
+end
+
+class Assembler
+
+   def initialize
+      @codes = {
+         'TST' => 0x00,
+         'ID' => 0x01,
+         'NUM' => 0x02,
+         'SR' => 0x03,
+         'CLL' => 0x04,
+         'R' => 0x05,
+         'SET' => 0x06,
+         'B' => 0x07,
+         'BT' => 0x08,
+         'BF' => 0x09,
+         'BE' => 0x0a,
+         'CL' => 0x0b,
+         'CI' => 0x0c,
+         'GN1' => 0x0d,
+         'GN2' => 0x0e,
+         'LB' => 0x0f,
+         'OUT' => 0x10,
+         'ADR' => 0x11
+      }
+   end
+
+   def assemble(input, output)
+      address = 0
+      labels = {}
+
+      input.each do |line|
+         if not line.rstrip.empty?
+            if label? line
+               labels[line.strip] = address
+            else
+               address += code_size line.rstrip, output
+            end
+         end
+      end
+
+      input.rewind
+
+      input.each do |line|
+         if not line.rstrip.empty?
+            assemble_line line.rstrip, output, labels 
+         end
+      end
+   end
+
+   private
+
+   def label?(line)
+      line =~ /^[A-Z][A-Z0-9_]*$/
+   end
+
+   def code_size(line, output)
+      if line =~ /^[ ]{7}(OUT|SR|CI|R|BE|SET|ID|LB|GN1)$/
+         1 
+      elsif line =~ /^[ ]{7}(ADR|CLL|BF |BT ) ([A-Z][A-Z0-9_]*)$/
+         5
+      elsif line =~ /^[ ]{7}(TST|CL ) '(.*)'$/
+         1 + 1 + $2.length # opcode, length of string, string
+      elsif line =~ /^[A-Z][A-Z0-9_]*$/
+         0 
+      elsif line =~ /^[ ]{7}END$/
+         0
+      else
+         raise "ERROR: Invalid line '#{line}'" 
+      end
+   end
+
+   def assemble_line(line, output, labels)
+      if line =~ /^[ ]{7}(OUT|SR|CI|R|BE|SET|ID|LB|GN1)$/
+         output.putc @codes[$1]
+      elsif line =~ /^[ ]{7}(ADR|CLL|BF |BT ) ([A-Z][A-Z0-9_]*)$/
+         output.putc @codes[$1.strip]
+         address = labels[$2]
+         output.putc ((address >> 24) & 0xff)
+         output.putc ((address >> 16) & 0xff)
+         output.putc ((address >> 8) & 0xff)
+         output.putc (address & 0xff)
+      elsif line =~ /^[ ]{7}(TST|CL ) '(.*)'$/
+         output.putc @codes[$1.strip]
+         output.putc $2.size
+         $2.each_char do |c|
+            output.putc c
+         end
+      elsif line =~ /^[A-Z][A-Z0-9_]*$/
+         # nothing to do
+      elsif line =~ /^[ ]{7}END$/
+         # nothing to do 
+      else
+         puts "ERROR: Invalid line '#{line}'" 
+         exit
+      end
+   end
+
+end
+
+
+# Main program
+options = AssemblerOptions.parse ARGV
+
+if ARGV.length == 0
+   puts 'ERROR: Missing file to assemble'
+   exit
+end
+
+assembler = Assembler.new
+ARGV.each do |filename|
+   binary = File.basename(filename, '.*') + '.bin'
+
+   if not File.exist? filename
+      puts
+      puts "ERROR: File '#{filename}' does not exist"
+      exit
+   end
+
+   if File.exist?(binary) and not options.force
+      puts
+      puts "ERROR: Use option '-f' to overwrite '#{binary}'"
+      exit
+   end
+
+   if options.verbose
+      puts
+      puts "Assembling '#{filename}'..."
+   end
+
+   begin
+      input = File.open filename, 'rt'
+   rescue
+      puts
+      puts "ERROR: Cannot open '#{filename}'"
+      exit
+   end
+
+   begin
+      output = File.open binary, 'wb' 
+   rescue
+      puts
+      puts "ERROR: Cannot open '#{binary}'"
+      exit
+   end
+
+   assembler.assemble input, output
+end
+
