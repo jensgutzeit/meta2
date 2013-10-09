@@ -62,8 +62,10 @@ class VM
 
    def run(image, src)
       pc = 0
+      output_buffer = '       '
       switch = false
       token_buffer = []
+      last_removed_sequence = ''
 
       while pc < image.size do
          opcode = image[pc]
@@ -82,6 +84,7 @@ class VM
             src.lstrip!
 
             if src.start_with?(s)
+               last_removed_sequence = s
                src.sub!(/^#{s}/, '')
                switch = true
             else
@@ -93,6 +96,7 @@ class VM
 
             if identifier?(src)
                s = identifier(src)
+               last_removed_sequence = s
                src.sub!(/^#{s}/, '')
                switch = true
 
@@ -124,10 +128,15 @@ class VM
                pc += 1
             end
 
-            puts "       #{s} " 
+            output_buffer += s
+            output_buffer += ' '
          when @codes['CI']
-            puts "Not yet implemented"
-            exit
+            output_buffer += last_removed_sequence
+            pc += 1
+         when @codes['OUT']
+            puts output_buffer
+            output_buffer = '       '
+            pc += 1
          when @codes['ADR']
             pc = addr(image, pc)
          else
