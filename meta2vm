@@ -1,0 +1,206 @@
+#!/usr/bin/env ruby
+
+require 'optparse'
+require 'ostruct'
+
+VERSION = [0, 0, 1]
+
+class AssemblerOptions
+   
+   def self.parse(args)
+      options = OpenStruct.new
+      options.verbose = false
+      options.force = false
+
+      opt_parser = OptionParser.new do |opts|
+         opts.banner = 'Usage: meta2vm [options] vmimage srcfile'
+         opts.separator ''
+         opts.separator 'Specific options:'
+
+         opts.on_tail '-h', '--help', 'Show this message' do
+            puts opts
+            exit
+         end
+
+         opts.on_tail '--version', 'Show program version' do
+            puts "meta2vm #{VERSION.join('.')}"
+            exit
+         end
+
+      end
+
+      opt_parser.parse! args
+      options
+   end
+
+end
+
+class VM
+
+   def initialize
+      @codes = {
+         'TST' => 0x00,
+         'ID' => 0x01,
+         'NUM' => 0x02,
+         'SR' => 0x03,
+         'CLL' => 0x04,
+         'R' => 0x05,
+         'SET' => 0x06,
+         'B' => 0x07,
+         'BT' => 0x08,
+         'BF' => 0x09,
+         'BE' => 0x0a,
+         'CL' => 0x0b,
+         'CI' => 0x0c,
+         'GN1' => 0x0d,
+         'GN2' => 0x0e,
+         'LB' => 0x0f,
+         'OUT' => 0x10,
+         'ADR' => 0x11
+      }
+   end
+
+   def run(image, src)
+      pc = 0
+      switch = false
+      token_buffer = []
+
+      while pc < image.size do
+         opcode = image[pc]
+
+         case opcode.ord
+         when @codes['TST']
+            length = image[pc + 1].ord
+            pc += 2
+            s = ''
+            for i in 1..length do
+               s += image[pc]
+               pc += 1
+            end
+
+            # skip whitespaces 
+            src.lstrip!
+
+            if src.start_with?(s)
+               src.sub!(/^#{s}/, '')
+               switch = true
+            else
+               switch = false
+            end
+         when @codes['ID']
+            # skip whitespaces
+            src.lstrip!
+
+            if identifier?(src)
+               s = identifier(src)
+               src.sub!(/^#{s}/, '')
+               switch = true
+
+               token_buffer << s
+            else
+               switch = false
+            end
+
+            pc += 1
+         when @codes['BF']
+            if switch
+               pc += 5 
+            else
+               pc = addr(image, pc)
+            end
+         when @codes['BE']
+            if switch
+               pc += 1
+            else
+               puts 'PARSE ERROR'
+               exit
+            end
+         when @codes['CL']
+            puts "Not yet implemented"
+            exit
+         when @codes['ADR']
+            pc = addr(image, pc)
+         else
+            puts "ERROR: Unknown opcode '#{opcode.ord.to_s(16)}' at address #{pc.to_s(16)}"
+            exit
+         end
+      end
+   end
+
+   private
+
+   def addr(image, pc)
+      address = image[pc + 1].ord
+      address <<= 8
+      address += image[pc + 2].ord
+      address <<= 8
+      address += image[pc + 3].ord
+      address <<= 8
+      address += image[pc + 4].ord
+
+      address 
+   end
+
+   def identifier?(src)
+      if src.empty?
+         false
+      end
+
+      src =~ /^[A-Z][A-Z0-9]*\s+/ 
+   end
+
+   def identifier(src)
+      src =~/^([A-Z][A-Z0-9]*)\s+/
+
+      $1
+   end
+
+end
+
+
+# Main program
+options = AssemblerOptions.parse ARGV
+
+if ARGV.length == 0
+   puts 'ERROR: Missing VM image'
+   exit
+end
+
+if ARGV.length == 1
+   puts 'ERROR: Missing source file'
+   exit
+end
+
+vmName = ARGV[0]
+
+if not File.exist? vmName
+   puts
+   puts "ERROR: File '#{vmName}' does not exist"
+   exit
+end
+
+image = nil
+begin
+   open(vmName, 'rb') do |f|
+      image = f.read
+   end
+rescue
+   puts
+   puts "ERROR: Cannot open '#{vmName}'"
+   exit
+end
+
+srcName = ARGV[1]
+
+if not File.exist? srcName
+   puts
+   puts "ERROR: File '#{srcName}' does not exist"
+   exit
+end
+
+f = File.open(srcName, 'rt')
+src = f.read
+
+vm = VM.new
+vm.run(image, src)
+
