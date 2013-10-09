@@ -116,6 +116,16 @@ class VM
                exit
             end
          when @codes['CL']
+            length = image[pc + 1].ord
+            pc += 2
+            s = ''
+            for i in 1..length do
+               s += image[pc]
+               pc += 1
+            end
+
+            puts "       #{s} " 
+         when @codes['CI']
             puts "Not yet implemented"
             exit
          when @codes['ADR']
