@@ -66,6 +66,7 @@ class VM
       switch = false
       token_buffer = []
       last_removed_sequence = ''
+      return_stack = []
 
       while pc < image.size do
          opcode = image[pc]
@@ -106,6 +107,10 @@ class VM
             end
 
             pc += 1
+         when @codes['CLL']
+            return_address = pc + 5
+            return_stack << return_address
+            pc = addr(image, pc) 
          when @codes['BF']
             if switch
                pc += 5 
