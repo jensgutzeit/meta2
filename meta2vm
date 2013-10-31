@@ -138,6 +138,9 @@ class VM
          when @codes['CI']
             output_buffer += last_removed_sequence
             pc += 1
+         when @codes['LB']
+            output_buffer = ''
+            pc += 1
          when @codes['OUT']
             puts output_buffer
             output_buffer = '       '
