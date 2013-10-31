@@ -64,8 +64,9 @@ class VM
       pc = 0
       output_buffer = '       '
       switch = false
-      token_buffer = []
+      token_buffer = ''
       last_removed_sequence = ''
+      label_counter = 1
       return_stack = []
 
       while pc < image.size do
@@ -73,6 +74,7 @@ class VM
 
          case opcode.ord
          when @codes['TST']
+            old_pc = pc
             length = image[pc + 1].ord
             pc += 2
             s = ''
@@ -91,6 +93,9 @@ class VM
             else
                switch = false
             end
+
+            puts "\t\t\t\t\t#{old_pc.to_s(16)} TST '#{s}'"
+            puts "\t\t\t\t\t\tswitch = #{switch}"
          when @codes['ID']
             # skip whitespaces
             src.lstrip!
@@ -101,23 +106,79 @@ class VM
                src.sub!(/^#{s}/, '')
                switch = true
 
-               token_buffer << s
+               token_buffer = s
             else
                switch = false
             end
 
+            puts "\t\t\t\t\t#{pc.to_s(16)} ID  ('#{s}')"
+            puts "\t\t\t\t\t\tswitch = #{switch}"
+
+            pc += 1
+         when @codes['SR']
+            old_pc = pc
+            # skip leading whitespaces
+            src.lstrip!
+
+            s = ''
+            if src.start_with?("'")
+               switch = true 
+
+               s = string(src)
+               token_buffer = s
+               src.sub!(/^#{s}/, '')
+            else
+               switch = false
+            end
+
+            puts "\t\t\t\t\t#{old_pc.to_s(16)} SR"
+            puts "\t\t\t\t\t\tswitch = #{switch}"
+
             pc += 1
          when @codes['CLL']
             return_address = pc + 5
-            return_stack << return_address
-            pc = addr(image, pc) 
+            return_stack << {'addr' => return_address,
+                             'label1' => '',
+                             'label2' => ''}
+            dest = addr(image, pc) 
+            
+            puts "\t\t\t\t\t#{pc.to_s(16)} CLL #{dest.to_s(16)}"
+
+            pc = dest
+         when @codes['R']
+            if return_stack.empty?
+               puts "RETURN STACK UNDERFLOW"
+               exit 1
+            end
+
+            dest = return_stack[-1]['addr']
+            return_stack.pop
+
+            puts "\t\t\t\t\t#{pc.to_s(16)} R (#{dest.to_s(16)})"
+            pc = dest
          when @codes['BF']
             if switch
-               pc += 5 
+               dest = pc + 5 
             else
-               pc = addr(image, pc)
+               dest = addr(image, pc)
             end
+
+            puts "\t\t\t\t\t#{pc.to_s(16)} BF  #{dest.to_s(16)}"
+
+            pc = dest
+         when @codes['BT']
+            if switch
+               dest = addr(image, pc)
+            else
+               dest = pc + 5
+            end
+
+            puts "\t\t\t\t\t#{pc.to_s(16)} BT  #{dest.to_s(16)}"
+
+            pc = dest
          when @codes['BE']
+            puts "\t\t\t\t\t#{pc.to_s(16)} BE"
+
             if switch
                pc += 1
             else
@@ -135,13 +196,36 @@ class VM
 
             output_buffer += s
             output_buffer += ' '
+
+            puts "\t\t\t\t\t#{pc.to_s(16)} CL  '#{s}'"
+         when @codes['GN1']
+            puts "\t\t\t\t\t#{pc.to_s(16)} GN1"
+            if return_stack.empty?
+               puts "RETURN STACK UNDERFLOW"
+               exit 1
+            end
+
+            if return_stack[-1]['label1'].empty?
+               return_stack[-1]['label1'] = "L#{label_counter}"
+               label_counter += 1
+            end
+
+            puts return_stack[-1]['label1']
+
+            pc += 1
          when @codes['CI']
-            output_buffer += last_removed_sequence
+            puts "\t\t\t\t\t#{pc.to_s(16)} CI"
+
+            output_buffer += token_buffer 
             pc += 1
          when @codes['LB']
+            puts "\t\t\t\t\t#{pc.to_s(16)} LB"
+
             output_buffer = ''
             pc += 1
          when @codes['OUT']
+            puts "\t\t\t\t\t#{pc.to_s(16)} OUT"
+
             puts output_buffer
             output_buffer = '       '
             pc += 1
@@ -173,11 +257,17 @@ class VM
          false
       end
 
-      src =~ /^[A-Z][A-Z0-9]*\s+/ 
+      0 == (/^[A-Z][A-Z0-9]*\s+/ =~ src)
    end
 
    def identifier(src)
-      src =~/^([A-Z][A-Z0-9]*)\s+/
+      src =~ /^([A-Z][A-Z0-9]*)\s+/
+
+      $1
+   end
+
+   def string(src)
+      src =~ /^(\'[^\']*\')/
 
       $1
    end
