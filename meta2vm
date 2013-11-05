@@ -88,14 +88,11 @@ class VM
 
             if src.start_with?(s)
                last_removed_sequence = s
-               src.sub!(/^#{s}/, '')
+               src = src[s.length..-1]
                switch = true
             else
                switch = false
             end
-
-            puts "\t\t\t\t\t#{old_pc.to_s(16)} TST '#{s}'"
-            puts "\t\t\t\t\t\tswitch = #{switch}"
          when @codes['ID']
             # skip whitespaces
             src.lstrip!
@@ -103,16 +100,13 @@ class VM
             if identifier?(src)
                s = identifier(src)
                last_removed_sequence = s
-               src.sub!(/^#{s}/, '')
+               src = src[s.length..-1]
                switch = true
 
                token_buffer = s
             else
                switch = false
             end
-
-            puts "\t\t\t\t\t#{pc.to_s(16)} ID  ('#{s}')"
-            puts "\t\t\t\t\t\tswitch = #{switch}"
 
             pc += 1
          when @codes['SR']
@@ -126,13 +120,10 @@ class VM
 
                s = string(src)
                token_buffer = s
-               src.sub!(/^#{s}/, '')
+               src = src[s.length..-1]
             else
                switch = false
             end
-
-            puts "\t\t\t\t\t#{old_pc.to_s(16)} SR"
-            puts "\t\t\t\t\t\tswitch = #{switch}"
 
             pc += 1
          when @codes['CLL']
@@ -141,29 +132,31 @@ class VM
                              'label1' => '',
                              'label2' => ''}
             dest = addr(image, pc) 
-            
-            puts "\t\t\t\t\t#{pc.to_s(16)} CLL #{dest.to_s(16)}"
-
             pc = dest
          when @codes['R']
             if return_stack.empty?
-               puts "RETURN STACK UNDERFLOW"
-               exit 1
+               src.lstrip!
+               if src.length != 0
+                  puts "RETURN STACK UNDERFLOW"
+                  exit 1
+               else
+                  exit 0
+               end
             end
 
             dest = return_stack[-1]['addr']
             return_stack.pop
 
-            puts "\t\t\t\t\t#{pc.to_s(16)} R (#{dest.to_s(16)})"
             pc = dest
+         when @codes['SET']
+            switch = true
+            pc += 1
          when @codes['BF']
             if switch
                dest = pc + 5 
             else
                dest = addr(image, pc)
             end
-
-            puts "\t\t\t\t\t#{pc.to_s(16)} BF  #{dest.to_s(16)}"
 
             pc = dest
          when @codes['BT']
@@ -173,12 +166,8 @@ class VM
                dest = pc + 5
             end
 
-            puts "\t\t\t\t\t#{pc.to_s(16)} BT  #{dest.to_s(16)}"
-
             pc = dest
          when @codes['BE']
-            puts "\t\t\t\t\t#{pc.to_s(16)} BE"
-
             if switch
                pc += 1
             else
@@ -195,11 +184,7 @@ class VM
             end
 
             output_buffer += s
-            output_buffer += ' '
-
-            puts "\t\t\t\t\t#{pc.to_s(16)} CL  '#{s}'"
          when @codes['GN1']
-            puts "\t\t\t\t\t#{pc.to_s(16)} GN1"
             if return_stack.empty?
                puts "RETURN STACK UNDERFLOW"
                exit 1
@@ -210,22 +195,16 @@ class VM
                label_counter += 1
             end
 
-            puts return_stack[-1]['label1']
+            output_buffer += return_stack[-1]['label1']
 
             pc += 1
          when @codes['CI']
-            puts "\t\t\t\t\t#{pc.to_s(16)} CI"
-
             output_buffer += token_buffer 
             pc += 1
          when @codes['LB']
-            puts "\t\t\t\t\t#{pc.to_s(16)} LB"
-
             output_buffer = ''
             pc += 1
          when @codes['OUT']
-            puts "\t\t\t\t\t#{pc.to_s(16)} OUT"
-
             puts output_buffer
             output_buffer = '       '
             pc += 1
@@ -257,11 +236,11 @@ class VM
          false
       end
 
-      0 == (/^[A-Z][A-Z0-9]*\s+/ =~ src)
+      0 == (/^[A-Z][A-Z0-9]*[^A-Z0-9]+/ =~ src)
    end
 
    def identifier(src)
-      src =~ /^([A-Z][A-Z0-9]*)\s+/
+      src =~ /^([A-Z][A-Z0-9]*)[^A-Z0-9]+/
 
       $1
    end

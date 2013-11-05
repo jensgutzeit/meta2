@@ -181,7 +181,7 @@ ST
        BE
        CLL EX1
        BE
-       TST '.,'
+       TST ';'
        BE
        CL  'R'
        OUT
