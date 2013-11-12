@@ -3,125 +3,125 @@ OUT1
        TST '*1'
        BF  L1
        CL  'GN1'
-       OUT
+       OUT 
 L1
        BT  L2
        TST '*2'
        BF  L3
        CL  'GN2'
-       OUT
+       OUT 
 L3
        BT  L2
        TST '*'
        BF  L4
        CL  'CI'
-       OUT
+       OUT 
 L4
        BT  L2
-       SR
+       SR 
        BF  L5
        CL  'CL '
-       CI
-       OUT
+       CI 
+       OUT 
 L5
 L2
-       R
+       R 
 OUTPUT
        TST '.OUT'
        BF  L6
        TST '('
-       BE
+       BE 
 L7
        CLL OUT1
        BT  L7
-       SET
-       BE
+       SET 
+       BE 
        TST ')'
-       BE
+       BE 
 L6
        BT  L8
        TST '.LABEL'
        BF  L9
        CL  'LB'
-       OUT
+       OUT 
        CLL OUT1
-       BE
+       BE 
 L9
 L8
        BF  L10
        CL  'OUT'
-       OUT
+       OUT 
 L10
 L11
-       R
+       R 
 EX3
-       ID
+       ID 
        BF  L12
-       CL  'CLL '
-       CI
-       OUT
+       CL  'CLL'
+       CI 
+       OUT 
 L12
        BT  L13
-       SR
+       SR 
        BF  L14
-       CL  'TST '
-       CI
-       OUT
+       CL  'TST'
+       CI 
+       OUT 
 L14
        BT  L13
        TST '.ID'
        BF  L15
        CL  'ID'
-       OUT
+       OUT 
 L15
        BT  L13
        TST '.NUMBER'
        BF  L16
        CL  'NUM'
-       OUT
+       OUT 
 L16
        BT  L13
        TST '.STRING'
        BF  L17
        CL  'SR'
-       OUT
+       OUT 
 L17
        BT  L13
        TST '('
        BF  L18
        CLL EX1
-       BE
+       BE 
        TST ')'
-       BE
+       BE 
 L18
        BT  L13
        TST '.EMPTY'
        BF  L19
        CL  'SET'
-       OUT
+       OUT 
 L19
        BT  L13
        TST '$'
        BF  L20
-       LB
-       GN1
-       OUT
+       LB 
+       GN1 
+       OUT 
        CLL EX3
-       BE
+       BE 
        CL  'BT '
-       GN1
-       OUT
+       GN1 
+       OUT 
        CL  'SET'
-       OUT
+       OUT 
 L20
 L13
-       R
+       R 
 EX2
        CLL EX3
        BF  L21
        CL  'BF '
-       GN1
-       OUT
+       GN1 
+       OUT 
 L21
        BT  L22
        CLL OUTPUT
@@ -133,7 +133,7 @@ L25
        CLL EX3
        BF  L26
        CL  'BE'
-       OUT
+       OUT 
 L26
        BT  L27
        CLL OUTPUT
@@ -141,14 +141,14 @@ L26
 L28
 L27
        BT  L25
-       SET
-       BE
-       LB
-       GN1
-       OUT
+       SET 
+       BE 
+       LB 
+       GN1 
+       OUT 
 L24
 L29
-       R
+       R 
 EX1
        CLL EX2
        BF  L30
@@ -156,57 +156,56 @@ L31
        TST '/'
        BF  L32
        CL  'BT '
-       GN1
-       OUT
+       GN1 
+       OUT 
        CLL EX2
-       BE
+       BE 
 L32
 L33
        BT  L31
-       SET
-       BE
-       LB
-       GN1
-       OUT
+       SET 
+       BE 
+       LB 
+       GN1 
+       OUT 
 L30
 L34
-       R
+       R 
 ST
-       ID
+       ID 
        BF  L35
-       LB
-       CI
-       OUT
+       LB 
+       CI 
+       OUT 
        TST '='
-       BE
+       BE 
        CLL EX1
-       BE
-       TST ';'
-       BE
+       BE 
+       TST '.,'
+       BE 
        CL  'R'
-       OUT
+       OUT 
 L35
 L36
-       R
+       R 
 PROGRAM
        TST '.SYNTAX'
        BF  L37
-       ID
-       BE
-       CL  'ADR '
-       CI
-       OUT
+       ID 
+       BE 
+       CL  'ADR'
+       CI 
+       OUT 
 L38
        CLL ST
        BT  L38
-       SET
-       BE
+       SET 
+       BE 
        TST '.END'
-       BE
+       BE 
        CL  'END'
-       OUT
+       OUT 
 L37
 L39
-       R
-       END
-
+       R 
+       END 

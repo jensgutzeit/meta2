@@ -183,7 +183,7 @@ class VM
                pc += 1
             end
 
-            output_buffer += s
+            output_buffer += s + ' '
          when @codes['GN1']
             if return_stack.empty?
                puts "RETURN STACK UNDERFLOW"
@@ -199,7 +199,7 @@ class VM
 
             pc += 1
          when @codes['CI']
-            output_buffer += token_buffer 
+            output_buffer += token_buffer
             pc += 1
          when @codes['LB']
             output_buffer = ''
