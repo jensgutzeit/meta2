@@ -29,13 +29,13 @@ creating the binary for the virtual machine (meta2.asm).
 ## Links
 
 A detailled introduction for META II can be found at
-[[http://www.bayfronttechnologies.com/metaii.html]](http://www.bayfronttechnologies.com/metaii.html).
+[http://www.bayfronttechnologies.com/metaii.html](http://www.bayfronttechnologies.com/metaii.html).
 
 Other implementations of META II:
 
-* [[https://bitbucket.org/bunny351/meta2]](https://bitbucket.org/bunny351/meta2)
-* [[https://github.com/robertfeldt/meta_compile]](https://github.com/robertfeldt/meta_compile)
-* [[https://github.com/impeachgod/meta]](https://github.com/impeachgod/meta)
+* [https://bitbucket.org/bunny351/meta2](https://bitbucket.org/bunny351/meta2)
+* [https://github.com/robertfeldt/meta_compile](https://github.com/robertfeldt/meta_compile)
+* [https://github.com/impeachgod/meta](https://github.com/impeachgod/meta)
 
 Have fun!
 
