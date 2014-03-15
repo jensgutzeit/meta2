@@ -36,6 +36,7 @@ Other implementations of META II:
 * [https://bitbucket.org/bunny351/meta2](https://bitbucket.org/bunny351/meta2)
 * [https://github.com/robertfeldt/meta_compile](https://github.com/robertfeldt/meta_compile)
 * [https://github.com/impeachgod/meta](https://github.com/impeachgod/meta)
+* [https://github.com/benfle/META-II](https://github.com/benfle/META-II)
 
 Have fun!
 
